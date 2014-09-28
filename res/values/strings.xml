@@ -2,7 +2,6 @@
 <resources>
 
     <string name="app_name">ContainerDetector</string>
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
       <string-array name="materials"> 
 	        <item>ceramic</item>
@@ -18,8 +17,19 @@
       </string-array>
       
       <string-array name="level"> 
+	        <item>0</item>
+	        <item>0.1</item>
+	        <item>0.2</item>
+	        <item>0.3</item>
+	        <item>0.4</item>
+	        <item>0.5</item>
+	        <item>0.6</item>
+	        <item>0.7</item>
+	        <item>0.8</item>
+	        <item>0.9</item>
+	        <item>1</item>
 	        <item>empty</item>
-	        <item>quarter</item>
+	        <item>quarters</item>
 	        <item>half</item>
 	        <item>3quarters</item>
 	        <item>full</item>
@@ -27,18 +37,18 @@
       </string-array>
       
       <string-array name="containing"> 
-	        <item>none</item>
 	        <item>liquid</item>
 	        <item>solid</item>
-	         <item>others</item>
+	        <item>others</item>
       </string-array>
       
        <string-array name="volume">
-            <item>0.1</item>
-            <item>0.2</item>
-            <item>0.3</item>
-            <item>0.5</item>
-            <item>0.75</item>
-            <item>1</item>
+             <item>1</item>
+             <item>0.8</item>
+             <item>0.75</item>
+             <item>0.5</item>
+             <item>0.4</item>
+             <item>0.25</item>
+             <item>0.1</item>
         </string-array>
 </resources>

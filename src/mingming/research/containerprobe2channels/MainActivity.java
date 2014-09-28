@@ -13,6 +13,8 @@ import android.graphics.Color;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
+import android.media.SoundPool;
+import android.media.SoundPool.OnLoadCompleteListener;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
@@ -81,6 +83,12 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 	
 	int counter = 0;
 	
+	AudioManager mAudioManager;
+	SoundPool  mSoundPool;
+	boolean loaded = false;
+	private int soundID;
+	boolean plays = false;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -133,9 +141,25 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 		tv_counter = (TextView)findViewById(R.id.textView_counter);
 		
    	    String root = Environment.getExternalStorageDirectory().toString();
-	    myDir = new File(root + "/container");    
+	    myDir = new File(root + "/containerprobe");    
 	    myDir.mkdirs();
 	    
+		
+	    mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+	    
+		mSoundPool = new SoundPool(10, AudioManager.STREAM_MUSIC,0);
+		mSoundPool.setOnLoadCompleteListener(new OnLoadCompleteListener(){
+		
+			@Override
+			public void onLoadComplete(SoundPool soundPool, int sampleId,
+					int status) {
+				// TODO Auto-generated method stub
+				loaded = true;
+			}
+			
+		});
+	    
+		soundID = mSoundPool.load(this, R.raw.sin20hz20000hzlin_0db16bit44100hz,1);
 		
 		if (savedInstanceState == null) {
 			getSupportFragmentManager().beginTransaction()
@@ -276,7 +300,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 				
 				containerNote = et_note_container.getText().toString();
 				
-				mRecordFileName =  containerNote + "_" + materials + "_" + seal + "_" + level + "_" + containing  + "_" + volumeRatio + "_" + timestamp + ".wav";
+				mRecordFileName =  level +  "_" + materials + "_" + containing + "_" + containerNote + "_" + seal  + "_" + volumeRatio + "_" + timestamp + ".wav";
 				
 				mRecordFile = new File(myDir,mRecordFileName);
 				
@@ -303,7 +327,8 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 				{
 					bt_probing.setClickable(false);
 					bt_probing.setBackgroundColor(Color.GRAY);
-					startOneProbing();
+					//startOneProbing();
+					startOneProbingWith2Channels();
 					counter ++;
 				} 
 				
@@ -362,6 +387,59 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 		}
 
 	}
+	
+	
+	
+	private void playSweepSoundSeparateFrom2Channels() {
+       if(loaded && !plays)
+       {
+    	   mSoundPool.play(soundID, (int) (volumeRatio * mAudioManager
+						.getStreamMaxVolume(AudioManager.STREAM_MUSIC)), 0, 1,0,1);
+    	   startTimerTaskAfterLeftChannelProb(Utils.probing_duration_for_2_channels);
+    	   plays = true;
+       }
+	}
+	
+	private void startTimerTaskAfterLeftChannelProb(int timeinterval)
+	{
+		
+		 new CountDownTimer(timeinterval, timeinterval) {
+
+		     public void onTick(long millisUntilFinished) {
+		    	 //bt_sweep.setText("seconds remaining: " + millisUntilFinished / 1000);
+		     }
+
+		     public void onFinish() {	
+		    	 mSoundPool.play(soundID, 0, (int) (volumeRatio * mAudioManager
+							.getStreamMaxVolume(AudioManager.STREAM_MUSIC)), 1,0,1);
+		    	 startTimerTaskAfterRightChannelProb(Utils.probing_duration_for_2_channels);
+		    	 
+		    	 plays = false;
+		     }
+		  }.start();
+	}
+	
+	private void startTimerTaskAfterRightChannelProb(int timeinterval)
+	{
+		
+		 new CountDownTimer(timeinterval, timeinterval) {
+
+		     public void onTick(long millisUntilFinished) {
+		    	 //bt_sweep.setText("seconds remaining: " + millisUntilFinished / 1000);
+		     }
+
+		     public void onFinish() {		    	
+		    	 StopRecordSound();
+		    	 if(!autoprobing)
+		    	 {
+			    	 bt_probing.setText("Probing");
+			    	 bt_probing.setClickable(true);
+			    	 bt_probing.setBackgroundColor(Color.GREEN);
+		    	 }
+		     }
+		  }.start();
+	}
+	
 	
 	private void startTimerTask(int timeinterval)
 	{
@@ -468,6 +546,12 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 		startRecordSound();
 		
 		playSweepSound();
+	}
+	
+	private void startOneProbingWith2Channels()
+	{
+		startRecordSound();
+		playSweepSoundSeparateFrom2Channels();
 	}
 		
 }
