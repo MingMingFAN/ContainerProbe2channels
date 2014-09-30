@@ -393,8 +393,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 	private void playSweepSoundSeparateFrom2Channels() {
        if(loaded && !plays)
        {
-    	   mSoundPool.play(soundID, (int) (volumeRatio * mAudioManager
-						.getStreamMaxVolume(AudioManager.STREAM_MUSIC)), 0, 1,0,1);
+    	   mSoundPool.play(soundID, volumeRatio, 0, 1,0,1);
     	   startTimerTaskAfterLeftChannelProb(Utils.probing_duration_for_2_channels);
     	   plays = true;
        }
@@ -410,8 +409,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 		     }
 
 		     public void onFinish() {	
-		    	 mSoundPool.play(soundID, 0, (int) (volumeRatio * mAudioManager
-							.getStreamMaxVolume(AudioManager.STREAM_MUSIC)), 1,0,1);
+		    	 mSoundPool.play(soundID, 0, volumeRatio, 1,0,1);
 		    	 startTimerTaskAfterRightChannelProb(Utils.probing_duration_for_2_channels);
 		    	 
 		    	 plays = false;
