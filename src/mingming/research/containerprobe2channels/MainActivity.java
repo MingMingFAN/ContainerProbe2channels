@@ -43,6 +43,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 	Spinner spinner_level;
 	Spinner spinner_containg;
 	Spinner spinner_seal;
+	Spinner spinner_soundtype;
 	
 	Button bt_probing;
 	CheckBox cb_auto;
@@ -55,11 +56,12 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 	TextView tv_counter;
 	
 	String materials = "";
-	float volumeRatio = 0.5f;
+	float volumeRatio = 1.0f;
 	String level = "0";
 	String containing = "";
 	String seal = "";  // 0: not sealed; 1: sealed;
 	String containerNote = "";
+	String probetype = "";
 	
 	File myDir;
 	String mRecordFileName;  // file name of recorded sound clip
@@ -72,7 +74,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 	String note_containing = "";
 	
 	ExtAudioRecorder extAudioRecorder = null;
-	MediaPlayer mp = null;
+
 	
 	Timer mTimerPeriodic = null;
 	Timer mTimerOneTime = null;
@@ -84,10 +86,16 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 	int counter = 0;
 	
 	AudioManager mAudioManager;
+	MediaPlayer mp = null;
+	int playtime_cnt = 0;
+	private int soundID = 0;
+	/*
 	SoundPool  mSoundPool;
 	boolean loaded = false;
-	private int soundID;
+	
 	boolean plays = false;
+	*/
+	
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -126,6 +134,13 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 		spinner_seal.setOnItemSelectedListener(this);
 		
 		
+		spinner_soundtype = (Spinner)findViewById(R.id.spinner_soundtype);
+		ArrayAdapter<CharSequence> adapter6 = ArrayAdapter.createFromResource(this, R.array.soundtype, android.R.layout.simple_spinner_item);
+		adapter6.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+		spinner_soundtype.setAdapter(adapter6);
+		spinner_soundtype.setOnItemSelectedListener(this);
+		
+		
 		bt_probing = (Button)findViewById(R.id.button_probing);
 		bt_probing.setOnClickListener(this);
 		bt_probing.setBackgroundColor(Color.GREEN);
@@ -147,6 +162,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 		
 	    mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
 	    
+		/*
 		mSoundPool = new SoundPool(10, AudioManager.STREAM_MUSIC,0);
 		mSoundPool.setOnLoadCompleteListener(new OnLoadCompleteListener(){
 		
@@ -160,6 +176,8 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 		});
 	    
 		soundID = mSoundPool.load(this, R.raw.sin20hz20000hzlin_0db16bit44100hz,1);
+		*/
+		
 		
 		if (savedInstanceState == null) {
 			getSupportFragmentManager().beginTransaction()
@@ -249,6 +267,18 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 					level = temp;
 				}
 				break;
+			case R.id.spinner_soundtype:
+				if(temp.equals("sametime"))
+				{
+					probetype = "sametime";
+					soundID = R.raw.sin20hz20000hzlin_0db16bit44100hz;
+				}
+				else if(temp.equals("sequentially"))
+				{
+					probetype = "sequentially";
+					soundID = R.raw.sin20hz20000hzlin_2channels;
+				}
+				break;
 			default:
 				break;
 		}
@@ -300,7 +330,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 				
 				containerNote = et_note_container.getText().toString();
 				
-				mRecordFileName =  level +  "_" + materials + "_" + containing + "_" + containerNote + "_" + seal  + "_" + volumeRatio + "_" + timestamp + ".wav";
+				mRecordFileName =  level +  "_" + probetype + "_" + materials + "_" + containing + "_" + containerNote + "_" + seal  + "_" + volumeRatio + "_" + timestamp + ".wav";
 				
 				mRecordFile = new File(myDir,mRecordFileName);
 				
@@ -327,8 +357,8 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 				{
 					bt_probing.setClickable(false);
 					bt_probing.setBackgroundColor(Color.GRAY);
-					//startOneProbing();
-					startOneProbingWith2Channels();
+					startOneProbing();
+					//startOneProbingWith2Channels();
 					counter ++;
 				} 
 				
@@ -359,28 +389,40 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 	}
 	
 	private void playSweepSound() {
-		/*
-		 * <item>SineSweep</item> <item>SineSweep(15k-20k)</item>
-		 * <item>MLS</item> <item>PinkNoise</item> <item>WhiteNoise</item>
-		 */
-		final AudioManager mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
 		mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
 				(int) (volumeRatio * mAudioManager
 						.getStreamMaxVolume(AudioManager.STREAM_MUSIC)), 0);
-		// Log.i("TAG","Max Volume: " +
-		// mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
-		mp = MediaPlayer.create(getApplicationContext(),
-				R.raw.sin20hz20000hzlin_0db16bit44100hz);
-		
+		mp = MediaPlayer.create(getApplicationContext(), soundID);
 		if (mp != null) {
 			mp.start();
 			mp.setOnCompletionListener(new OnCompletionListener() {
 
 				@Override
-				public void onCompletion(MediaPlayer mp) {
+				public void onCompletion(final MediaPlayer mp) {
 					// TODO Auto-generated method stub
-					ReleaseMediaPlayer();
-					startTimerTask(Utils.probing_duration);
+					
+					playtime_cnt++;
+					
+					if(playtime_cnt >= Utils.repeat_times)
+					{
+						ReleaseMediaPlayer();
+						startTimerTask(Utils.probing_duration);
+						playtime_cnt = 0;
+					}
+					else
+					{
+						 new CountDownTimer(Utils.probing_duration_for_2_channels, 100000) {
+
+						     public void onTick(long millisUntilFinished) {
+						    	 //bt_sweep.setText("seconds remaining: " + millisUntilFinished / 1000);
+						     }
+
+						     public void onFinish() {		    	
+						    	 mp.start();
+						     }
+						  }.start();
+						
+					}
 				}
 			});
 
@@ -389,7 +431,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 	}
 	
 	
-	
+	/*
 	private void playSweepSoundSeparateFrom2Channels() {
        if(loaded && !plays)
        {
@@ -398,6 +440,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
     	   plays = true;
        }
 	}
+	
 	
 	private void startTimerTaskAfterLeftChannelProb(int timeinterval)
 	{
@@ -437,7 +480,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 		     }
 		  }.start();
 	}
-	
+	*/
 	
 	private void startTimerTask(int timeinterval)
 	{
@@ -509,7 +552,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 				//Log.i("Tag","Version: " + currentapiVersion);
 			}
 			
-			mRecordFileName =  containerNote + "_" + materials + "_" + seal + "_" + level + "_" + containing  + "_" + volumeRatio + "_" + timestamp + ".wav";
+			mRecordFileName =  level +  "_" + probetype + "_" +  materials + "_" + containing + "_" + containerNote + "_" + seal  + "_" + volumeRatio + "_" + timestamp + ".wav";
 			
 			mRecordFile = new File(myDir,mRecordFileName);
 			
@@ -518,14 +561,33 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 			playSweepSound();
 			
 			counter ++;
-			
-			runOnUiThread(new Runnable(){
+						
 
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
-					tv_counter.setText(counter + "");
-				}});
+			
+			if(counter >= 100)
+			{
+				runOnUiThread(new Runnable(){
+
+					@Override
+					public void run() {
+						bt_probing.setText("Probing");
+						bt_probing.setBackgroundColor(Color.GREEN);
+						stopPeriodProbing();
+						counter = 0;
+						tv_counter.setText(counter + "");
+					}});
+
+			}
+			else
+			{
+				runOnUiThread(new Runnable(){
+
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						tv_counter.setText(counter + "");
+					}});
+			}
 		}
 	}
 	
@@ -546,10 +608,11 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 		playSweepSound();
 	}
 	
+	/*
 	private void startOneProbingWith2Channels()
 	{
 		startRecordSound();
 		playSweepSoundSeparateFrom2Channels();
 	}
-		
+	*/	
 }
