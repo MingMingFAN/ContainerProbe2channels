@@ -54,6 +54,8 @@
         
       <string-array name="soundtype"> 
 	        <item>sametime</item>
+	        <item>halfoverlap</item>
+	        <item>adjacent</item>
 	        <item>sequentially</item>
       </string-array>
 </resources>

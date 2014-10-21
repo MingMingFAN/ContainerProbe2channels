@@ -278,6 +278,16 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 					probetype = "sequentially";
 					soundID = R.raw.sin20hz20000hzlin_2channels;
 				}
+				else if(temp.equals("halfoverlap"))
+				{
+					probetype = "halfoverlap";
+					soundID = R.raw.offset_0_05;
+				}
+				else if(temp.equals("adjacent"))
+				{
+					probetype = "adjacent";
+					soundID = R.raw.offset_0_10;
+				}
 				break;
 			default:
 				break;
@@ -551,6 +561,8 @@ public class MainActivity extends ActionBarActivity implements OnClickListener, 
 			    // do something for phones running an SDK before ICE 
 				//Log.i("Tag","Version: " + currentapiVersion);
 			}
+			
+			level = et_note_level.getText().toString();
 			
 			mRecordFileName =  level +  "_" + probetype + "_" +  materials + "_" + containing + "_" + containerNote + "_" + seal  + "_" + volumeRatio + "_" + timestamp + ".wav";
 			
